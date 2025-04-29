@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Calculadora de Juros - Valor Bruto e Líquido</title>
+  <title>Calculadora de Juros & Parcelas</title>
   <style>
     body {
       font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
@@ -12,13 +12,13 @@
       align-items: center;
       min-height: 100vh;
       margin: 0;
-      background: #f0f8ff;
+      background: #f0f8ff; /* Tom de azul claro */
     }
     .container {
       background: #ffffff;
       padding: 2rem;
       border-radius: 8px;
-      box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1);
+      box-shadow: 0 4px 20px rgba(0,0,0,0.1);
       width: 350px;
     }
     h2 {
@@ -34,6 +34,7 @@
       margin-right: 1rem;
       cursor: pointer;
       font-size: 0.95rem;
+      display: block;
     }
     label {
       display: block;
@@ -76,31 +77,27 @@
     }
   </style>
   <script>
-    // Converte uma string no formato "YYYY-MM-DD" para uma data local
+    // Converte string "YYYY-MM-DD" para um objeto Date (considerando data local)
     function parseDateLocal(dateStr) {
-      var parts = dateStr.split('-');
-      // Os meses em JavaScript começam em 0, por isso subtrai 1
-      return new Date(parts[0], parts[1] - 1, parts[2]);
+      var parts = dateStr.split("-");
+      return new Date(parts[0], parts[1] - 1, parts[2]); // JS trata os meses de 0 a 11
     }
-
-    // Formata um número para o formado brasileiro (ex.: 1.234,56)
+    
+    // Formata um número para o padrão brasileiro (ex.: 1.234,56)
     function formatCurrency(value) {
       let number = parseFloat(
         value.toString().replace(/\./g, '').replace(',', '.')
       );
-      if (isNaN(number)) {
-        return '';
-      }
+      if (isNaN(number)) return '';
       return number.toLocaleString('pt-BR', {
         minimumFractionDigits: 2,
         maximumFractionDigits: 2
       });
     }
-
-    // Aplica máscara enquanto o usuário digita (permite apenas dígitos e vírgula)
+    
+    // Aplica máscara enquanto o usuário digita (basicamente permite apenas dígitos e vírgula)
     function aplicarMascara(e) {
       let value = e.target.value;
-      // Remove caracteres que não sejam dígitos ou vírgula
       value = value.replace(/[^0-9,]/g, '');
       let partes = value.split(',');
       if (partes.length > 2) {
@@ -108,107 +105,134 @@
       }
       e.target.value = value;
     }
-
-    // Formata o campo quando o mesmo perde o foco (blur)
+    
+    // Formata o campo ao perder o foco (blur)
     function formatarCampo(e) {
       let value = e.target.value;
       e.target.value = formatCurrency(value);
     }
-
-    // Converte uma string de moeda no formato brasileiro para número
+    
+    // Converte uma string de moeda (formato BR) para número
     function parseCurrency(valueStr) {
       if (!valueStr) return 0;
       valueStr = valueStr.replace(/\./g, '').replace(',', '.');
       let number = parseFloat(valueStr);
       return isNaN(number) ? 0 : number;
     }
-
-    // Atualiza o rótulo e placeholder do campo de valor de acordo com o modo de cálculo
-    function mudarModo() {
-      let mode = document.querySelector('input[name="calculoMode"]:checked').value;
-      let labelValor = document.getElementById("labelValor");
-      let inputValor = document.getElementById("valor");
-      if (mode === "bruto") {
-        labelValor.innerText = "Valor Líquido:";
-        inputValor.placeholder = "0,00";
-      } else {
-        labelValor.innerText = "Valor Bruto:";
-        inputValor.placeholder = "0,00";
-      }
-      inputValor.value = "";
-      document.getElementById("resultado").innerText = "";
-    }
-
-    // Funções para somar dias ou meses a uma data
+    
+    // Função para somar dias a uma data
     function addDays(date, days) {
       let result = new Date(date);
       result.setDate(result.getDate() + days);
       return result;
     }
+    
+    // Função para somar meses a uma data
     function addMonths(date, months) {
       let result = new Date(date);
       result.setMonth(result.getMonth() + months);
       return result;
     }
-
-    // Função que realiza os cálculos e trata as informações de prazo/data
+    
+    // Atualiza o rótulo do campo de valor e exibe/esconde campos conforme o modo de cálculo selecionado
+    function mudarModo() {
+      let mode = document.querySelector('input[name="calculoMode"]:checked').value;
+      let labelValor = document.getElementById("labelValor");
+      let inputValor = document.getElementById("valor");
+    
+      if (mode === "bruto") {
+        labelValor.innerText = "Valor Líquido:";
+        inputValor.placeholder = "0,00";
+        document.getElementById("prazoDiv").style.display = "block";
+        document.getElementById("dataDiv").style.display = "block";
+        document.getElementById("parcelasDiv").style.display = "none";
+      } else if (mode === "liquido") {
+        labelValor.innerText = "Valor Bruto:";
+        inputValor.placeholder = "0,00";
+        document.getElementById("prazoDiv").style.display = "block";
+        document.getElementById("dataDiv").style.display = "block";
+        document.getElementById("parcelasDiv").style.display = "none";
+      } else if (mode === "parcelas") {
+        labelValor.innerText = "Valor Líquido:";
+        inputValor.placeholder = "0,00";
+        document.getElementById("prazoDiv").style.display = "none";
+        document.getElementById("dataDiv").style.display = "none";
+        document.getElementById("parcelasDiv").style.display = "block";
+      }
+      inputValor.value = "";
+      document.getElementById("resultado").innerHTML = "";
+    }
+    
+    // Função principal que executa o cálculo conforme o modo selecionado
     function calcular() {
       let mode = document.querySelector('input[name="calculoMode"]:checked').value;
       let valorStr = document.getElementById("valor").value;
       let valor = parseCurrency(valorStr);
       let taxaJurosStr = document.getElementById("taxaJuros").value;
       let taxaJuros = parseFloat(taxaJurosStr.replace(',', '.')) / 100;
-
-      // Obter a data de vencimento informada (se houver)
-      let dataVencInput = document.getElementById("dataVencimento").value;
-      let today = new Date();
-      today.setHours(0, 0, 0, 0);
-      let diffDias, computedDueDate;
-
-      if (dataVencInput) {
-        // Utiliza a data informada como está, convertendo para data local
-        let dueDate = parseDateLocal(dataVencInput);
-        // Garantir que a data esteja zerada (meia-noite local)
-        dueDate.setHours(0, 0, 0, 0);
-        diffDias = Math.floor((dueDate - today) / (1000 * 60 * 60 * 24)) + 1; // Inclui a data de hoje
-        computedDueDate = dueDate;
-      } else {
-        // Se a data não for informada, utiliza o prazo informado
-        let prazoVal = parseInt(document.getElementById("prazo").value);
-        if (isNaN(prazoVal) || prazoVal <= 0) {
-          alert("Por favor, informe um prazo válido ou a data de vencimento.");
+    
+      let resultadoMsg = "";
+      
+      if (mode === "parcelas") {
+        // Modo Parcelamento: valor líquido e quantidade de parcelas
+        let numParcelas = parseInt(document.getElementById("parcelas").value);
+        if (isNaN(numParcelas) || numParcelas <= 0) {
+          alert("Informe uma quantidade válida de parcelas.");
           return;
         }
-        let tipoPrazo = document.getElementById("tipoPrazo").value;
-        if (tipoPrazo === "dias") {
-          diffDias = prazoVal;
-          computedDueDate = addDays(today, prazoVal);
+        let parcela;
+        if (taxaJuros === 0) {
+          parcela = valor / numParcelas;
         } else {
-          diffDias = prazoVal * 30; // Aproximação: 1 mês ≈ 30 dias
-          computedDueDate = addMonths(today, prazoVal);
+          parcela = valor * (taxaJuros * Math.pow(1 + taxaJuros, numParcelas)) / (Math.pow(1 + taxaJuros, numParcelas) - 1);
         }
-      }
-
-      // Converte os dias para meses (1 mês ≈ 30 dias)
-      let meses = diffDias / 30;
-      let resultadoMsg = "";
-
-      if (mode === "bruto") {
-        // Calcular Valor Bruto a partir do Valor Líquido
-        let valorBruto = valor / (1 - (taxaJuros * meses));
-        resultadoMsg = `Valor Bruto: R$ ${valorBruto.toLocaleString('pt-BR', {minimumFractionDigits: 2, maximumFractionDigits: 2})}`;
+        resultadoMsg = `Valor da Parcela: R$ ${parcela.toLocaleString('pt-BR', {minimumFractionDigits: 2, maximumFractionDigits: 2})}`;
+        resultadoMsg += `<br>Número de Parcelas: ${numParcelas}`;
+        
       } else {
-        // Calcular Valor Líquido a partir do Valor Bruto
-        let valorLiquido = valor * (1 - (taxaJuros * meses));
-        resultadoMsg = `Valor Líquido: R$ ${valorLiquido.toLocaleString('pt-BR', {minimumFractionDigits: 2, maximumFractionDigits: 2})}`;
+        // Nos modos "bruto" e "liquido" usamos as informações de prazo/data
+        let today = new Date();
+        today.setHours(0, 0, 0, 0);
+        let diffDias, computedDueDate;
+        let dataVencInput = document.getElementById("dataVencimento").value;
+        
+        if (dataVencInput) {
+          let dueDate = parseDateLocal(dataVencInput);
+          dueDate.setHours(0, 0, 0, 0);
+          diffDias = Math.floor((dueDate - today) / (1000 * 60 * 60 * 24)) + 1; // Inclusão da data de hoje
+          computedDueDate = dueDate;
+        } else {
+          let prazoVal = parseInt(document.getElementById("prazo").value);
+          if (isNaN(prazoVal) || prazoVal <= 0) {
+            alert("Informe um prazo válido ou a data de vencimento.");
+            return;
+          }
+          let tipoPrazo = document.getElementById("tipoPrazo").value;
+          if (tipoPrazo === "dias") {
+            diffDias = prazoVal;
+            computedDueDate = addDays(today, prazoVal);
+          } else {
+            diffDias = prazoVal * 30; // Aproximação: 1 mês ≈ 30 dias
+            computedDueDate = addMonths(today, prazoVal);
+          }
+        }
+        
+        // Converter dias para meses (1 mês ≈ 30 dias)
+        let meses = diffDias / 30;
+        if (mode === "bruto") {
+          let valorBruto = valor / (1 - (taxaJuros * meses));
+          resultadoMsg = `Valor Bruto: R$ ${valorBruto.toLocaleString('pt-BR', {minimumFractionDigits: 2, maximumFractionDigits: 2})}`;
+        } else { // modo "líquido"
+          let valorLiquido = valor * (1 - (taxaJuros * meses));
+          resultadoMsg = `Valor Líquido: R$ ${valorLiquido.toLocaleString('pt-BR', {minimumFractionDigits: 2, maximumFractionDigits: 2})}`;
+        }
+        resultadoMsg += `<br>Prazo: ${diffDias} dias`;
+        resultadoMsg += `<br>Data de Vencimento: ${computedDueDate.toLocaleDateString('pt-BR')}`;
       }
-      
-      resultadoMsg += `<br>Prazo: ${diffDias} dias`;
-      resultadoMsg += `<br>Data de Vencimento: ${computedDueDate.toLocaleDateString('pt-BR')}`;
       
       document.getElementById("resultado").innerHTML = resultadoMsg;
     }
-
+    
     window.onload = function() {
       let inputValor = document.getElementById("valor");
       inputValor.addEventListener("input", aplicarMascara);
@@ -218,6 +242,7 @@
       taxaJurosInput.addEventListener("input", aplicarMascara);
       taxaJurosInput.addEventListener("blur", formatarCampo);
       
+      // Adiciona o evento de mudança para cada radio button de modo de cálculo
       let radios = document.querySelectorAll('input[name="calculoMode"]');
       radios.forEach(radio => radio.addEventListener("change", mudarModo));
     }
@@ -225,7 +250,8 @@
 </head>
 <body>
   <div class="container">
-    <h2>Calculadora de Juros</h2>
+    <h2>Calculadora de Juros & Parcelas</h2>
+    
     <!-- Seleção do modo de cálculo -->
     <div class="radio-group">
       <label>
@@ -236,28 +262,42 @@
         <input type="radio" name="calculoMode" value="liquido">
         Calcular Valor Líquido (descontando os juros)
       </label>
+      <label>
+        <input type="radio" name="calculoMode" value="parcelas">
+        Parcelamento (valor líquido e parcelas iguais)
+      </label>
     </div>
     
-    <!-- Campo de valor que se adapta conforme o modo selecionado -->
+    <!-- Campo de valor -->
     <label id="labelValor" for="valor">Valor Líquido:</label>
     <input type="text" id="valor" placeholder="0,00">
     
+    <!-- Campo taxa de juros -->
     <label for="taxaJuros">Taxa de Juros Mensal (%):</label>
     <input type="text" id="taxaJuros" placeholder="0,00">
     
-    <!-- Bloco de prazo: se não informar data, usa os campos abaixo -->
-    <label for="prazo">Prazo:</label>
-    <input type="number" id="prazo" placeholder="Ex: 6">
+    <!-- Campos de prazo (usados nos modos "bruto" e "líquido") -->
+    <div id="prazoDiv">
+      <label for="prazo">Prazo:</label>
+      <input type="number" id="prazo" placeholder="Ex: 6">
+      
+      <label for="tipoPrazo">Tipo de Prazo:</label>
+      <select id="tipoPrazo">
+        <option value="meses">Meses</option>
+        <option value="dias">Dias</option>
+      </select>
+    </div>
     
-    <label for="tipoPrazo">Tipo de Prazo:</label>
-    <select id="tipoPrazo">
-      <option value="meses">Meses</option>
-      <option value="dias">Dias</option>
-    </select>
+    <div id="dataDiv">
+      <label for="dataVencimento">Data de Vencimento (opcional):</label>
+      <input type="date" id="dataVencimento">
+    </div>
     
-    <!-- Opção: informar a data de vencimento -->
-    <label for="dataVencimento">Data de Vencimento (opcional):</label>
-    <input type="date" id="dataVencimento">
+    <!-- Campo de quantidade de parcelas (usado no modo "parcelas") -->
+    <div id="parcelasDiv" style="display: none;">
+      <label for="parcelas">Quantidade de Parcelas:</label>
+      <input type="number" id="parcelas" placeholder="Ex: 12">
+    </div>
     
     <button onclick="calcular()">Calcular</button>
     

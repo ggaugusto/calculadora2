@@ -18,7 +18,7 @@
       background: #ffffff;
       padding: 2rem;
       border-radius: 8px;
-      box-shadow: 0 4px 20px rgba(0,0,0,0.1);
+      box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1);
       width: 350px;
     }
     h2 {
@@ -98,7 +98,7 @@
     th {
       background: #e0f0ff;
     }
-    /* Área para adicionar múltiplos valores (para os modos Bruto e Líquido) */
+    /* Área para adicionar múltiplos valores (usada nos modos Bruto e Líquido) */
     #multiplosValoresDiv {
       margin-top: 1rem;
       border: 1px dashed #ccc;
@@ -127,10 +127,14 @@
       padding: 3px 6px;
       font-size: 0.8rem;
     }
-    /* Regras para impressão: exibe apenas o resumo dos resultados */
+    /* Div exclusiva para Parcelas: Data de Vencimento da Primeira Parcela */
+    #primeiraParcelaDiv {
+      display: none;
+    }
+    /* Regras para impressão: exibe somente o resumo */
     @media print {
       body * {
-        visibility: hidden; 
+        visibility: hidden;
       }
       #resultado, #resultado * {
         visibility: visible;
@@ -144,7 +148,7 @@
     }
   </style>
   <script>
-    // Converte string "YYYY-MM-DD" para objeto Date (data local)
+    // Converte uma string "YYYY-MM-DD" para um objeto Date (data local)
     function parseDateLocal(dateStr) {
       var parts = dateStr.split("-");
       return new Date(parts[0], parts[1] - 1, parts[2]);
@@ -155,9 +159,9 @@
       let d = new Date(date);
       d.setHours(0, 0, 0, 0);
       let day = d.getDay();
-      if (day === 6) {
+      if (day === 6) { 
         d = addDays(d, 2);
-      } else if (day === 0) {
+      } else if (day === 0) { 
         d = addDays(d, 1);
       }
       return d;
@@ -170,7 +174,7 @@
       return number.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
     }
     
-    // Aplica máscara para inputs de moeda (somente dígitos e vírgula)
+    // Aplica máscara para inputs de moeda (permite somente dígitos e vírgula)
     function aplicarMascara(e) {
       let value = e.target.value;
       value = value.replace(/[^0-9,]/g, '');
@@ -181,13 +185,13 @@
       e.target.value = value;
     }
     
-    // Formata o campo quando perde o foco
+    // Formata campo ao perder o foco
     function formatarCampo(e) {
       let value = e.target.value;
       e.target.value = formatCurrency(value);
     }
     
-    // Converte string de moeda (formato brasileiro) para número
+    // Converte string de moeda (formato BR) para número
     function parseCurrency(valueStr) {
       if (!valueStr) return 0;
       valueStr = valueStr.replace(/\./g, '').replace(',', '.');
@@ -209,7 +213,7 @@
       return result;
     }
     
-    // Função para adicionar uma nova linha de valor adicional
+    // Adiciona uma nova linha de valor adicional
     function adicionarValorAdicional() {
       const container = document.getElementById("listaValores");
       let div = document.createElement("div");
@@ -222,12 +226,12 @@
       container.appendChild(div);
     }
     
-    // Remove a linha de valor adicional
+    // Remove uma linha de valor adicional
     function removerValorAdicional(btn) {
       btn.parentNode.remove();
     }
     
-    // Alterna exibição quando o checkbox "Mais de um Valor" for marcado
+    // Alterna a exibição quando o checkbox "Mais de um Valor" for marcado
     function toggleMaisValores() {
       let checkbox = document.getElementById("checkboxMaisValores");
       if (checkbox.checked) {
@@ -236,17 +240,18 @@
         document.getElementById("prazoDiv").style.display = "none";
         document.getElementById("dataDiv").style.display = "none";
         document.getElementById("parcelasDiv").style.display = "none";
+        document.getElementById("primeiraParcelaDiv").style.display = "none";
         // Exibe a área de valores adicionais
         document.getElementById("multiplosValoresDiv").style.display = "block";
       } else {
-        // Mostra os campos principais conforme o modo selecionado
+        // Exibe os campos principais conforme o modo selecionado
         document.getElementById("valor").style.display = "block";
         mudarModo();
         document.getElementById("multiplosValoresDiv").style.display = "none";
       }
     }
     
-    // Atualiza a exibição dos campos de acordo com o modo de cálculo selecionado
+    // Atualiza a exibição dos campos conforme o modo de cálculo selecionado
     function mudarModo() {
       let mode = document.querySelector('input[name="calculoMode"]:checked').value;
       let labelValor = document.getElementById("labelValor");
@@ -257,6 +262,7 @@
         inputValor.placeholder = "0,00";
         document.getElementById("prazoDiv").style.display = "block";
         document.getElementById("dataDiv").style.display = "block";
+        document.getElementById("primeiraParcelaDiv").style.display = "none";
         if (!document.getElementById("checkboxMaisValores").checked) {
           document.getElementById("multiplosValoresDiv").style.display = "none";
         }
@@ -265,15 +271,19 @@
         inputValor.placeholder = "0,00";
         document.getElementById("prazoDiv").style.display = "block";
         document.getElementById("dataDiv").style.display = "block";
+        document.getElementById("primeiraParcelaDiv").style.display = "none";
         if (!document.getElementById("checkboxMaisValores").checked) {
           document.getElementById("multiplosValoresDiv").style.display = "none";
         }
       } else if (mode === "parcelas") {
         labelValor.innerText = "Valor Líquido:";
         inputValor.placeholder = "0,00";
+        // Para Parcelamento, exibe apenas: Quantidade de Parcelas e Data de Vencimento da Primeira Parcela
         document.getElementById("prazoDiv").style.display = "none";
         document.getElementById("dataDiv").style.display = "none";
         document.getElementById("multiplosValoresDiv").style.display = "none";
+        document.getElementById("parcelasDiv").style.display = "block";
+        document.getElementById("primeiraParcelaDiv").style.display = "block";
       }
       inputValor.value = "";
       document.getElementById("resultado").innerHTML = "";
@@ -289,7 +299,7 @@
       let taxaJurosStr = document.getElementById("taxaJuros").value;
       let taxaJuros = parseFloat(taxaJurosStr.replace(',', '.')) / 100;
       let today = new Date();
-      today.setHours(0,0,0,0);
+      today.setHours(0, 0, 0, 0);
       
       // Cabeçalho do resumo
       let header = `<strong>Data do Cálculo:</strong> ${today.toLocaleDateString('pt-BR')}<br>`;
@@ -299,14 +309,22 @@
       let resumo = header;
       
       if (mode === "parcelas") {
-        // Modo Parcelas: utiliza o campo principal (ignorando o checkbox "Mais de um Valor")
+        // Modo Parcelas: utiliza os campos específicos
         let numParcelas = parseInt(document.getElementById("parcelas").value);
         if (isNaN(numParcelas) || numParcelas <= 0) {
           alert("Informe uma quantidade válida de parcelas.");
           return;
         }
         let valorPrincipal = parseCurrency(document.getElementById("valor").value);
-        resumo += `<strong>Valor (Líquido):</strong> R$ ${valorPrincipal.toLocaleString('pt-BR', {minimumFractionDigits:2, maximumFractionDigits:2})}<br>`;
+        let dataPrimeiraParcela = document.getElementById("dataPrimeiraParcela").value;
+        if (!dataPrimeiraParcela) {
+          alert("Informe a data de vencimento da primeira parcela.");
+          return;
+        }
+        let firstDueDate = parseDateLocal(dataPrimeiraParcela);
+        firstDueDate = adjustToMonday(firstDueDate);
+        
+        resumo += `<strong>Valor (Líquido):</strong> R$ ${valorPrincipal.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}<br>`;
         resumo += `<strong>Taxa de Juros a.m.:</strong> ${(taxaJuros*100).toFixed(2)}%<br>`;
         resumo += `<strong>Quantidade de Parcelas:</strong> ${numParcelas}<br>`;
         
@@ -317,8 +335,10 @@
           parcela = valorPrincipal * (taxaJuros * Math.pow(1+taxaJuros, numParcelas)) /
                     (Math.pow(1+taxaJuros, numParcelas) - 1);
         }
-        let firstDueDate = addMonths(today, 1);
-        firstDueDate = adjustToMonday(firstDueDate);
+        let valorBrutoTotal = parcela * numParcelas;
+        let valorJurosTotal = valorBrutoTotal - valorPrincipal;
+        resumo += `<strong>Valor Bruto Total:</strong> ${valorBrutoTotal.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}<br>`;
+        resumo += `<strong>Valor de Juros Total:</strong> ${valorJurosTotal.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}<br>`;
         
         let installmentDetails = "<table>";
         installmentDetails += "<tr><th>Parcela</th><th>Vencimento</th><th>Valor</th></tr>";
@@ -328,16 +348,15 @@
           installmentDetails += `<tr>
             <td>${i+1}</td>
             <td>${dueDate.toLocaleDateString('pt-BR')}</td>
-            <td>R$ ${parcela.toLocaleString('pt-BR', {minimumFractionDigits:2, maximumFractionDigits:2})}</td>
+            <td>R$ ${parcela.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</td>
           </tr>`;
         }
         installmentDetails += "</table>";
         resumo += installmentDetails;
         document.getElementById("resultado").innerHTML = resumo;
       } else {
-        // Para os modos Bruto e Líquido
+        // Modos Bruto e Líquido: se checkbox "Mais de um Valor" estiver marcado, utiliza os valores adicionais
         if (checkbox.checked) {
-          // Se o checkbox "Mais de um Valor" estiver marcado, utiliza os valores adicionais
           const lista = document.getElementById("listaValores");
           if (lista.childElementCount === 0) {
             alert("Adicione pelo menos um valor adicional.");
@@ -357,9 +376,9 @@
             }
             let val = parseCurrency(valorStr);
             let dueDate = parseDateLocal(dataVenc);
-            dueDate.setHours(0,0,0,0);
+            dueDate.setHours(0, 0, 0, 0);
             dueDate = adjustToMonday(dueDate);
-            let diffDias = Math.floor((dueDate - today)/(1000*60*60*24)) + 1;
+            let diffDias = Math.floor((dueDate - today) / (1000 * 60 * 60 * 24)) + 1;
             let meses = diffDias / 30;
             let valorFinal, juroCalculado;
             if (mode === "bruto") {
@@ -373,25 +392,25 @@
             totalFinal += valorFinal;
             tableHTML += `<tr>
               <td>${dueDate.toLocaleDateString('pt-BR')}</td>
-              <td>${val.toLocaleString('pt-BR', {minimumFractionDigits:2, maximumFractionDigits:2})}</td>
+              <td>${val.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</td>
               <td>${diffDias}</td>
-              <td>${juroCalculado.toLocaleString('pt-BR', {minimumFractionDigits:2, maximumFractionDigits:2})}</td>
-              <td>${valorFinal.toLocaleString('pt-BR', {minimumFractionDigits:2, maximumFractionDigits:2})}</td>
+              <td>${juroCalculado.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</td>
+              <td>${valorFinal.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</td>
             </tr>`;
           }
           tableHTML += `<tr>
               <th>Total</th>
-              <th>${totalOriginal.toLocaleString('pt-BR', {minimumFractionDigits:2, maximumFractionDigits:2})}</th>
+              <th>${totalOriginal.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</th>
               <th></th>
-              <th>${(totalFinal - totalOriginal).toLocaleString('pt-BR', {minimumFractionDigits:2, maximumFractionDigits:2})}</th>
-              <th>${totalFinal.toLocaleString('pt-BR', {minimumFractionDigits:2, maximumFractionDigits:2})}</th>
+              <th>${(totalFinal - totalOriginal).toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</th>
+              <th>${totalFinal.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</th>
             </tr>`;
           tableHTML += "</table>";
-          resumo += `<strong>Taxa de Juros a.m.:</strong> ${(taxaJuros*100).toFixed(2)}%<br>`;
+          resumo += `<strong>Taxa de Juros a.m.:</strong> ${(taxaJuros * 100).toFixed(2)}%<br>`;
           if (mode === "bruto") {
-            resumo += `<strong>Valor (Bruto) Total:</strong> ${totalFinal.toLocaleString('pt-BR', {minimumFractionDigits:2, maximumFractionDigits:2})}<br>`;
+            resumo += `<strong>Valor (Bruto) Total:</strong> ${totalFinal.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}<br>`;
           } else if (mode === "liquido") {
-            resumo += `<strong>Valor (Líquido) Total:</strong> ${totalFinal.toLocaleString('pt-BR', {minimumFractionDigits:2, maximumFractionDigits:2})}<br>`;
+            resumo += `<strong>Valor (Líquido) Total:</strong> ${totalFinal.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}<br>`;
           }
           resumo += tableHTML;
           document.getElementById("resultado").innerHTML = resumo;
@@ -409,9 +428,9 @@
           let tipoPrazo = document.getElementById("tipoPrazo").value;
           if (dataVencInput) {
             let dueDate = parseDateLocal(dataVencInput);
-            dueDate.setHours(0,0,0,0);
+            dueDate.setHours(0, 0, 0, 0);
             dueDate = adjustToMonday(dueDate);
-            diffDias = Math.floor((dueDate - today) / (1000*60*60*24)) + 1;
+            diffDias = Math.floor((dueDate - today) / (1000 * 60 * 60 * 24)) + 1;
             computedDueDate = dueDate;
             resumo += `<strong>Prazo:</strong> ${diffDias} dias<br>`;
             meses = diffDias / 30;
@@ -431,13 +450,13 @@
             }
             computedDueDate = adjustToMonday(computedDueDate);
           }
-          resumo += `<strong>Taxa de Juros a.m.:</strong> ${(taxaJuros*100).toFixed(2)}%<br>`;
+          resumo += `<strong>Taxa de Juros a.m.:</strong> ${(taxaJuros * 100).toFixed(2)}%<br>`;
           if (mode === "bruto") {
             let valorBruto = val / (1 - (taxaJuros * meses));
-            resumo += `<strong>Valor (Bruto):</strong> R$ ${valorBruto.toLocaleString('pt-BR', {minimumFractionDigits:2, maximumFractionDigits:2})}<br>`;
+            resumo += `<strong>Valor (Bruto):</strong> R$ ${valorBruto.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}<br>`;
           } else if (mode === "liquido") {
             let valorLiquido = val * (1 - (taxaJuros * meses));
-            resumo += `<strong>Valor (Líquido):</strong> R$ ${valorLiquido.toLocaleString('pt-BR', {minimumFractionDigits:2, maximumFractionDigits:2})}<br>`;
+            resumo += `<strong>Valor (Líquido):</strong> R$ ${valorLiquido.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}<br>`;
           }
           resumo += `<strong>Data de Vencimento Ajustada:</strong> ${computedDueDate.toLocaleDateString('pt-BR')}`;
           document.getElementById("resultado").innerHTML = resumo;
@@ -445,7 +464,7 @@
       }
     }
     
-    // Reinicia todos os campos e a área de resultados
+    // Função para reiniciar: limpa todos os campos e a área de resultados
     function reiniciar() {
       document.getElementById("nomeCliente").value = "";
       document.getElementById("valor").value = "";
@@ -509,7 +528,7 @@
     <label for="taxaJuros">Taxa de Juros Mensal (%):</label>
     <input type="text" id="taxaJuros" placeholder="0,00">
     
-    <!-- Campos de prazo (para modos Bruto e Líquido) - ocultos se checkbox estiver marcado -->
+    <!-- Campos de prazo (para modos Bruto e Líquido) – ocultos se checkbox estiver marcado -->
     <div id="prazoDiv">
       <label for="prazo">Prazo:</label>
       <input type="number" id="prazo" placeholder="Ex: 6">
@@ -526,10 +545,14 @@
       <input type="date" id="dataVencimento">
     </div>
     
-    <!-- Campo de quantidade de parcelas (para modo Parcelas) -->
+    <!-- Para o modo Parcelas -->
     <div id="parcelasDiv" style="display: none;">
       <label for="parcelas">Quantidade de Parcelas:</label>
       <input type="number" id="parcelas" placeholder="Ex: 12">
+    </div>
+    <div id="primeiraParcelaDiv" style="display: none;">
+      <label for="dataPrimeiraParcela">Data de Vencimento da Primeira Parcela:</label>
+      <input type="date" id="dataPrimeiraParcela">
     </div>
     
     <!-- Área para adicionar valores adicionais (usada quando checkbox "Mais de um Valor" está marcado) -->
